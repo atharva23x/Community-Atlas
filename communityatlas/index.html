@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="CommunityAtlas — map local infrastructure, save features, and export clean GeoJSON or CSV data." />
+  <meta name="theme-color" content="#f4f6f9" />
+  <title>CommunityAtlas — Community Infrastructure Mapper</title>
+  <script>
+    (function () {
+      var theme;
+      try {
+        theme = window.localStorage.getItem("communityatlas.theme.v1");
+      } catch (error) {
+        theme = null;
+      }
+      if (theme !== "light" && theme !== "dark") {
+        theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+      }
+      document.documentElement.dataset.theme = theme;
+    })();
+  </script>
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/community-atlas-favicon.png" />
+  <link rel="apple-touch-icon" href="assets/community-atlas-favicon.png" />
+  <link href="vendor/fonts/fonts.css" rel="stylesheet" />
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+  <link rel="stylesheet" href="vendor/geoman/leaflet-geoman.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <header class="app-header">
+      <div class="brand" aria-label="Community Atlas">
+        <img class="brand-mark" src="assets/community-atlas-mark.png" alt="" width="54" height="40" />
+        <span class="brand-copy">
+          <img class="brand-wordmark" src="assets/community-atlas-wordmark.png" alt="" width="140" height="39" />
+        </span>
+      </div>
+      <div class="header-actions">
+        <div class="auth-wrap" id="authWrap">
+          <button type="button" class="auth-btn" id="authBtn" aria-haspopup="dialog" aria-expanded="false" aria-label="Sign in or create an account">
+            <span class="auth-avatar" id="authAvatar" aria-hidden="true"><i data-lucide="user-round"></i></span>
+            <span class="auth-copy">
+              <span class="auth-name" id="authName">Sign in</span>
+              <span class="auth-role" id="authRole">Report &amp; vote</span>
+            </span>
+            <i data-lucide="chevron-down" class="auth-chevron" aria-hidden="true"></i>
+          </button>
+          <div class="auth-menu" id="authMenu" role="menu" aria-label="Account menu" hidden>
+            <div class="auth-menu-head">
+              <span class="auth-menu-name" id="authMenuName"></span>
+              <span class="auth-menu-email" id="authMenuEmail"></span>
+              <span class="user-role" id="authMenuRole"></span>
+            </div>
+            <button type="button" class="auth-menu-item" id="authImpactBtn" role="menuitem" hidden>
+              <i data-lucide="trophy" aria-hidden="true"></i>
+              <span id="authImpactLabel">My impact &amp; badges</span>
+            </button>
+            <button type="button" class="auth-menu-item" id="authAdminBtn" role="menuitem" hidden>
+              <i data-lucide="shield-check" aria-hidden="true"></i>
+              <span>Priority queue</span>
+            </button>
+            <button type="button" class="auth-menu-item" id="authSignOutBtn" role="menuitem">
+              <i data-lucide="log-out" aria-hidden="true"></i>
+              <span>Sign out</span>
+            </button>
+          </div>
+        </div>
+        <button type="button" class="theme-toggle" id="themeToggle" aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
+          <i data-lucide="moon" class="theme-icon theme-icon-dark" aria-hidden="true"></i>
+          <i data-lucide="sun" class="theme-icon theme-icon-light" aria-hidden="true"></i>
+        </button>
+        <span class="save-pill" id="savePill" role="status" aria-live="polite"><span id="saveText">✓ Saved</span></span>
+        <div class="export-wrap">
+          <button type="button" class="btn btn-primary export-btn" id="headerExportBtn" aria-haspopup="true" aria-expanded="false" aria-label="Export options">
+            <i data-lucide="download"></i>
+            <span class="btn-label">Export</span>
+            <i data-lucide="chevron-down" class="chevron" aria-hidden="true"></i>
+          </button>
+          <div class="export-menu" id="exportMenu" role="menu" aria-label="Export options" hidden>
+            <button type="button" role="menuitem" id="headerExportGeo" aria-disabled="false" aria-label="Export GeoJSON">
+              <i data-lucide="braces" aria-hidden="true"></i>
+              <span>Export GeoJSON</span>
+            </button>
+            <button type="button" role="menuitem" id="headerExportCsv" aria-disabled="false" aria-label="Export CSV">
+              <i data-lucide="table" aria-hidden="true"></i>
+              <span>Export CSV</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar" id="sidebar" aria-label="Mapping controls">
+        <section class="panel-section" aria-labelledby="drawLabel">
+          <div class="section-label" id="drawLabel">DRAW</div>
+          <div class="tool-grid" role="group" aria-label="Drawing tools">
+            <button type="button" class="tool-btn" data-tool="point" aria-pressed="false" aria-label="Point tool (P)">
+              <i data-lucide="circle-dot" aria-hidden="true"></i>
+              <span>Point</span>
+              <kbd class="tool-kbd" aria-hidden="true">P</kbd>
+            </button>
+            <button type="button" class="tool-btn" data-tool="line" aria-pressed="false" aria-label="Line tool (L)">
+              <i data-lucide="spline" aria-hidden="true"></i>
+              <span>Line</span>
+              <kbd class="tool-kbd" aria-hidden="true">L</kbd>
+            </button>
+            <button type="button" class="tool-btn" data-tool="area" aria-pressed="false" aria-label="Area tool (A)">
+              <i data-lucide="pentagon" aria-hidden="true"></i>
+              <span>Area</span>
+              <kbd class="tool-kbd" aria-hidden="true">A</kbd>
+            </button>
+          </div>
+          <p class="tool-hint" id="toolHint">Choose a tool to start drawing on the map.</p>
+        </section>
+
+        <section class="panel-section" aria-labelledby="positionLabel">
+          <div class="section-label" id="positionLabel">POSITION</div>
+          <div class="position-modes" role="radiogroup" aria-label="Position accuracy mode">
+            <label class="position-mode">
+              <input type="radio" name="positionMode" value="gnss" checked />
+              <span class="position-mode-copy">
+                <span class="position-mode-name">Standard GNSS</span>
+                <span class="position-mode-meta">Live device</span>
+              </span>
+            </label>
+            <label class="position-mode is-mock">
+              <input type="radio" name="positionMode" value="rtk-float" />
+              <span class="position-mode-copy">
+                <span class="position-mode-name">RTK Float</span>
+                <span class="position-mode-meta is-mock">Mock · 0.35 m</span>
+              </span>
+            </label>
+            <label class="position-mode is-mock">
+              <input type="radio" name="positionMode" value="rtk-fixed" />
+              <span class="position-mode-copy">
+                <span class="position-mode-name">RTK Fixed</span>
+                <span class="position-mode-meta is-mock">Mock · 0.02 m</span>
+              </span>
+            </label>
+            <label class="position-mode is-mock">
+              <input type="radio" name="positionMode" value="simulation" />
+              <span class="position-mode-copy">
+                <span class="position-mode-name">Simulation</span>
+                <span class="position-mode-meta is-mock">Simulated · 5 m</span>
+              </span>
+            </label>
+          </div>
+          <div class="position-readout">
+            <span class="accuracy-badge is-unknown" id="positionAccuracy" title="Accuracy unavailable">± —</span>
+            <span class="position-state" id="positionState">Locating…</span>
+          </div>
+          <p class="tool-hint position-hint" id="positionHint">Accuracy comes from your browser's location services.</p>
+        </section>
+
+        <section class="features-section" aria-labelledby="featuresLabel">
+          <div class="features-head">
+            <div class="section-heading" id="featuresLabel">FEATURES <span class="count-badge" id="featureCount">(0)</span></div>
+            <div class="features-tools">
+              <button type="button" class="mine-filter" id="featureMineToggle" aria-pressed="false" aria-controls="featureList" aria-label="Show only reports you raised" title="Show only reports you raised" hidden>
+                <span>Mine</span>
+                <span class="mine-filter-count" id="featureMineCount">0</span>
+              </button>
+              <label class="sort-control">
+                <span class="sr-only">Sort features</span>
+                <select id="featureSort" aria-label="Sort features">
+                  <option value="nearest">Nearest</option>
+                  <option value="newest">Newest</option>
+                  <option value="votes">Most supported</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <div class="nearby-bar" id="nearbyBar">
+            <button type="button" class="nearby-toggle" id="nearbyToggle" aria-pressed="true" title="Show reports near your location">
+              <i data-lucide="locate-fixed" aria-hidden="true"></i>
+              <span>Near me</span>
+            </button>
+            <label class="nearby-radius">
+              <span class="sr-only">Nearby report radius</span>
+              <select id="nearbyRadius" aria-label="Nearby report radius">
+                <option value="500">500 m</option>
+                <option value="2000" selected>2 km</option>
+                <option value="5000">5 km</option>
+              </select>
+            </label>
+            <span class="nearby-status" id="nearbyStatus" role="status" aria-live="polite">Locating…</span>
+          </div>
+          <button type="button" class="admin-queue-card" id="adminQueueBtn" hidden>
+            <span class="admin-queue-icon" aria-hidden="true"><i data-lucide="shield-check"></i></span>
+            <span class="admin-queue-copy">
+              <strong>Admin priority queue</strong>
+              <span id="adminQueueMeta">0 reports · 0 awaiting review</span>
+            </span>
+            <i data-lucide="chevron-right" class="admin-queue-arrow" aria-hidden="true"></i>
+          </button>
+          <ul class="feature-list" id="featureList"></ul>
+          <div class="empty-state" id="emptyState">
+            <span class="empty-icon" aria-hidden="true"><i data-lucide="map-pin"></i></span>
+            <p id="emptyStateText">No features yet. Use the tools above to start mapping.</p>
+            <button type="button" class="text-btn" id="nearbyEmptyBtn" aria-label="Show all reports instead" hidden>Show all reports</button>
+            <button type="button" class="text-btn" id="sampleBtn" aria-label="Load sample features">Load sample features</button>
+          </div>
+        </section>
+
+        <section class="panel-section" aria-labelledby="categoriesLabel">
+          <div class="section-label" id="categoriesLabel">CATEGORIES</div>
+          <ul class="legend-grid" id="categoryLegend" aria-label="Feature categories"></ul>
+        </section>
+
+        <section class="panel-section community-section" aria-labelledby="communityLabel">
+          <div class="section-label" id="communityLabel">COMMUNITY</div>
+          <button type="button" class="impact-card" id="impactCard" aria-label="Open community leaderboard">
+            <span class="impact-icon" id="impactIcon" aria-hidden="true"><i data-lucide="trophy"></i></span>
+            <span class="impact-main">
+              <span class="impact-head">
+                <strong id="impactTitle">Community ranks</strong>
+                <span class="impact-points" id="impactPoints">—</span>
+              </span>
+              <span class="impact-sub" id="impactSub">Sign in to earn points and badges.</span>
+              <span class="impact-progress" id="impactProgress" hidden>
+                <span class="impact-progress-bar" id="impactProgressBar"></span>
+              </span>
+              <span class="impact-meta" id="impactMeta">Reports and community support earn points.</span>
+            </span>
+            <i data-lucide="chevron-right" class="impact-arrow" aria-hidden="true"></i>
+          </button>
+        </section>
+
+        <footer class="sidebar-footer">
+          <div class="export-card">
+            <div class="export-card-head">
+              <span class="export-card-icon" aria-hidden="true"><i data-lucide="arrow-up-from-line"></i></span>
+              <div class="export-card-copy">
+                <div class="export-card-title">Export</div>
+                <div class="export-card-sub">Download approved reports</div>
+              </div>
+            </div>
+            <div class="export-actions">
+              <button type="button" class="btn btn-ghost" id="exportGeoBtn" aria-disabled="true" aria-label="Export GeoJSON">
+                <i data-lucide="braces" aria-hidden="true"></i>
+                <span>Export GeoJSON</span>
+              </button>
+              <button type="button" class="btn btn-ghost" id="exportCsvBtn" aria-disabled="true" aria-label="Export CSV">
+                <i data-lucide="table" aria-hidden="true"></i>
+                <span>Export CSV</span>
+              </button>
+            </div>
+          </div>
+          <button type="button" class="verify-link" id="verifyBtn" aria-label="Verify export accuracy">Verify export accuracy →</button>
+          <p class="local-note">Data stays in this browser until you export it.</p>
+        </footer>
+      </aside>
+
+      <main class="map-shell">
+        <div id="map" aria-label="Community infrastructure map"></div>
+        <div class="map-search" id="mapSearch">
+          <form class="search-form" id="searchForm" role="search" novalidate>
+            <i data-lucide="search" class="search-icon" aria-hidden="true"></i>
+            <input
+              class="search-input"
+              id="searchInput"
+              type="search"
+              placeholder="Search a place or street"
+              aria-label="Search a place or street"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded="false"
+              aria-controls="searchResults"
+            />
+            <button type="button" class="search-clear" id="searchClear" aria-label="Clear search" hidden>
+              <i data-lucide="x" aria-hidden="true"></i>
+            </button>
+          </form>
+          <div class="search-results" id="searchResults" role="listbox" aria-label="Search results" hidden></div>
+          <p class="sr-only" id="searchStatus" role="status" aria-live="polite"></p>
+        </div>
+        <div class="basemap-control" id="basemapControl">
+          <button type="button" class="basemap-toggle" id="basemapToggle" aria-expanded="false" aria-controls="basemapMenu" aria-label="Change basemap">
+            <i data-lucide="layers" aria-hidden="true"></i>
+            <span class="basemap-label" id="basemapLabel">Streets</span>
+            <i data-lucide="chevron-down" class="basemap-chevron" aria-hidden="true"></i>
+          </button>
+          <div class="basemap-menu" id="basemapMenu" hidden>
+            <div class="basemap-menu-title" id="basemapMenuTitle">Basemap</div>
+            <div class="basemap-options" id="basemapOptions" role="radiogroup" aria-labelledby="basemapMenuTitle"></div>
+          </div>
+        </div>
+        <div class="tile-banner" id="tileBanner" role="status" hidden>
+          <i data-lucide="triangle-alert" aria-hidden="true"></i>
+          <span>Some map tiles couldn't load. Your markers are safe — you can still work.</span>
+        </div>
+        <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Open mapping panel" aria-expanded="false" aria-controls="sidebar">
+          <i data-lucide="sliders-horizontal" class="toggle-icon-open" aria-hidden="true"></i>
+          <i data-lucide="chevron-down" class="toggle-icon-close" aria-hidden="true"></i>
+        </button>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="featureModal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <div>
+          <h2 class="modal-title" id="modalTitle">Add feature details</h2>
+          <p class="modal-subtitle">Give this place a name so others can find it.</p>
+        </div>
+      </div>
+      <form id="featureForm" novalidate>
+        <div class="report-position" id="reportPosition">
+          <span class="report-position-icon" aria-hidden="true"><i data-lucide="crosshair"></i></span>
+          <div class="report-position-copy">
+            <span class="report-position-label">Report position</span>
+            <span class="report-position-detail" id="reportPositionMode">Standard GNSS</span>
+          </div>
+          <span class="accuracy-badge is-unknown" id="reportAccuracy" title="Accuracy unavailable">± —</span>
+        </div>
+        <p class="report-position-note" id="reportPositionNote">Accuracy comes from your browser's location services.</p>
+        <div class="field">
+          <label for="featureName">Name</label>
+          <input type="text" id="featureName" name="name" placeholder="e.g., Main St crosswalk" autocomplete="off" aria-describedby="nameError" />
+          <p class="field-error" id="nameError" hidden>Name is required</p>
+        </div>
+        <div class="field">
+          <label for="featureCategory">Category</label>
+          <select id="featureCategory" name="category"></select>
+        </div>
+        <div class="field">
+          <label for="featureNotes">Notes (optional)</label>
+          <textarea id="featureNotes" name="notes" rows="3" placeholder="What should others know about this place?"></textarea>
+        </div>
+        <div class="field">
+          <label for="featurePhoto">Photo (optional)</label>
+          <input type="file" id="featurePhoto" name="photo" class="photo-input" accept="image/*" />
+          <div class="photo-field" id="photoField">
+            <button type="button" class="photo-choose" id="photoChooseBtn" aria-describedby="photoHint">
+              <span class="photo-choose-icon" aria-hidden="true"><i data-lucide="camera"></i></span>
+              <span class="photo-choose-copy">
+                <span class="photo-choose-title" id="photoChooseTitle">Add a photo</span>
+                <span class="photo-choose-sub">JPG, PNG, WebP, or GIF up to 12 MB</span>
+              </span>
+              <span class="photo-choose-action" aria-hidden="true">Browse</span>
+            </button>
+            <div class="photo-preview" id="photoPreview" hidden>
+              <img id="photoPreviewImg" alt="Selected photo preview" />
+              <div class="photo-preview-copy">
+                <span class="photo-preview-name" id="photoPreviewName"></span>
+                <div class="photo-preview-actions">
+                  <button type="button" class="photo-link" id="photoReplaceBtn">Replace</button>
+                  <button type="button" class="photo-link photo-remove" id="photoRemoveBtn">Remove</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="field-error" id="photoError" hidden></p>
+          <p class="field-hint" id="photoHint">Photos stay in this browser and are included in GeoJSON exports.</p>
+        </div>
+        <div class="duplicate-alert" id="duplicateAlert" role="status" hidden>
+          <span class="duplicate-icon" aria-hidden="true"><i data-lucide="copy-check"></i></span>
+          <div class="duplicate-copy">
+            <strong class="duplicate-title">Possible duplicate</strong>
+            <p class="duplicate-text" id="duplicateText">A report already exists nearby.</p>
+            <ul class="duplicate-list" id="duplicateList"></ul>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="modalCancel" aria-label="Cancel feature details">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="modalSave" aria-label="Save Feature">Save Feature</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="reportDetailModal" hidden>
+    <div class="modal-card report-detail-card" role="dialog" aria-modal="true" aria-labelledby="reportDetailTitle">
+      <div class="modal-head report-detail-head">
+        <div class="report-detail-heading">
+          <p class="report-detail-category" id="reportDetailCategory"></p>
+          <h2 class="modal-title" id="reportDetailTitle"></h2>
+          <p class="modal-subtitle" id="reportDetailSubtitle"></p>
+        </div>
+        <button type="button" class="modal-close" id="reportDetailClose" aria-label="Close report details">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <button type="button" class="report-detail-photo" id="reportDetailPhoto" hidden aria-label="View full report photo">
+        <img id="reportDetailPhotoImg" alt="" />
+        <span class="report-detail-photo-hint" aria-hidden="true">
+          <i data-lucide="maximize-2"></i>
+          View photo
+        </span>
+      </button>
+      <p class="report-detail-notes" id="reportDetailNotes"></p>
+      <dl class="report-detail-facts">
+        <div>
+          <dt>Status</dt>
+          <dd id="reportDetailStatus"></dd>
+        </div>
+        <div>
+          <dt>Support</dt>
+          <dd id="reportDetailVotes"></dd>
+        </div>
+        <div>
+          <dt>Location accuracy</dt>
+          <dd id="reportDetailPosition"></dd>
+        </div>
+        <div>
+          <dt>Geometry</dt>
+          <dd id="reportDetailGeometry"></dd>
+        </div>
+        <div class="report-detail-fact-wide">
+          <dt>Reported by</dt>
+          <dd id="reportDetailReporter"></dd>
+        </div>
+      </dl>
+      <div class="report-detail-toolbar">
+        <button type="button" class="btn btn-ghost btn-small" id="reportDetailLocate">
+          <i data-lucide="locate-fixed" aria-hidden="true"></i>
+          <span>Show on map</span>
+        </button>
+      </div>
+      <section class="report-comments" aria-labelledby="reportCommentsTitle">
+        <div class="report-comments-head">
+          <h3 id="reportCommentsTitle">Comments <span id="reportCommentsCount">(0)</span></h3>
+          <p>Discuss this report with the community.</p>
+        </div>
+        <ul class="comment-list" id="reportCommentList"></ul>
+        <p class="comment-empty" id="reportCommentsEmpty">No comments yet. Start the conversation.</p>
+        <form class="comment-form" id="reportCommentForm" novalidate>
+          <label class="sr-only" for="reportCommentInput">Add a comment</label>
+          <textarea id="reportCommentInput" rows="2" maxlength="600" placeholder="Ask a question or share an update…"></textarea>
+          <div class="comment-form-foot">
+            <span class="field-error" id="reportCommentError" hidden></span>
+            <button type="submit" class="btn btn-primary btn-small" id="reportCommentSubmit">Post comment</button>
+          </div>
+          <p class="comment-hint">Enter to post · Shift + Enter for a new line</p>
+        </form>
+        <div class="comment-signin" id="reportCommentSignin" hidden>
+          <p>Sign in to join the conversation.</p>
+          <button type="button" class="btn btn-ghost btn-small" id="reportCommentSigninBtn">Sign in to comment</button>
+        </div>
+      </section>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="reportDetailCloseBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="authModal" hidden>
+    <div class="modal-card auth-card" role="dialog" aria-modal="true" aria-labelledby="authTitle" aria-describedby="authSubtitle">
+      <div class="modal-head auth-head">
+        <div>
+          <h2 class="modal-title" id="authTitle">Welcome back</h2>
+          <p class="modal-subtitle" id="authSubtitle">Sign in to report issues and support community fixes.</p>
+        </div>
+        <button type="button" class="modal-close" id="authClose" aria-label="Close account dialog">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="auth-tabs" role="tablist" aria-label="Account access">
+        <button type="button" id="authTabSignin" role="tab" aria-selected="true" aria-controls="authSigninPanel">Sign in</button>
+        <button type="button" id="authTabRegister" role="tab" aria-selected="false" aria-controls="authRegisterPanel" tabindex="-1">Create account</button>
+      </div>
+      <p class="auth-message" id="authMessage" role="status" hidden></p>
+      <div class="auth-panel" id="authSigninPanel" role="tabpanel" aria-labelledby="authTabSignin">
+        <form id="authSigninForm" novalidate>
+          <div class="field">
+            <label for="authSigninEmail">Email</label>
+            <input type="email" id="authSigninEmail" name="email" autocomplete="username" inputmode="email" placeholder="you@example.com" />
+          </div>
+          <div class="field">
+            <label for="authSigninPassword">Password</label>
+            <input type="password" id="authSigninPassword" name="password" autocomplete="current-password" placeholder="Your password" />
+          </div>
+          <p class="field-error" id="authSigninError" hidden></p>
+          <button type="submit" class="btn btn-primary auth-submit" id="authSigninSubmit">Sign in</button>
+        </form>
+      </div>
+      <div class="auth-panel" id="authRegisterPanel" role="tabpanel" aria-labelledby="authTabRegister" hidden>
+        <form id="authRegisterForm" novalidate>
+          <div class="field">
+            <label for="authRegisterName">Full name</label>
+            <input type="text" id="authRegisterName" name="name" autocomplete="name" placeholder="e.g., Asha Verma" />
+          </div>
+          <div class="field">
+            <label for="authRegisterEmail">Email</label>
+            <input type="email" id="authRegisterEmail" name="email" autocomplete="email" inputmode="email" placeholder="you@example.com" />
+          </div>
+          <div class="field">
+            <label for="authRegisterPassword">Password</label>
+            <input type="password" id="authRegisterPassword" name="password" autocomplete="new-password" placeholder="At least 8 characters" />
+          </div>
+          <p class="auth-note">Reporter accounts can add reports and vote on local priorities. Admin access is reserved for the seeded demo administrator.</p>
+          <p class="field-error" id="authRegisterError" hidden></p>
+          <button type="submit" class="btn btn-primary auth-submit" id="authRegisterSubmit">Create account</button>
+        </form>
+      </div>
+      <div class="auth-demo">
+        <div class="auth-demo-copy">
+          <strong>Demo admin</strong>
+          <span>admin@communityatlas.app · admin123</span>
+        </div>
+        <button type="button" class="text-btn" id="authDemoFill">Use demo admin</button>
+      </div>
+      <p class="auth-disclaimer">Local demo only — accounts, votes, statuses, and comments stay in this browser. Real shared accounts need a server.</p>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="adminModal" hidden>
+    <div class="modal-card admin-card" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+      <div class="modal-head admin-head">
+        <div>
+          <h2 class="modal-title" id="adminTitle">Community priority</h2>
+          <p class="modal-subtitle" id="adminSubtitle">Reports ranked by community support. Update the status as work moves forward.</p>
+        </div>
+        <button type="button" class="modal-close" id="adminClose" aria-label="Close priority queue">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="admin-tabs" role="tablist" aria-label="Admin views">
+        <button type="button" class="admin-tab is-active" id="adminTabQueue" role="tab" aria-selected="true" aria-controls="adminQueuePanel">Priority queue</button>
+        <button type="button" class="admin-tab" id="adminTabAnalytics" role="tab" aria-selected="false" aria-controls="adminAnalyticsPanel" tabindex="-1">Analytics</button>
+      </div>
+      <div class="admin-panel" id="adminQueuePanel" role="tabpanel" aria-labelledby="adminTabQueue">
+        <div class="admin-stats" id="adminStats"></div>
+        <ul class="admin-list" id="adminList"></ul>
+        <div class="admin-empty" id="adminEmpty" hidden>
+          <span class="empty-icon" aria-hidden="true"><i data-lucide="inbox"></i></span>
+          <strong>No reports yet</strong>
+          <p>Reports added by the community will appear here, ranked by support.</p>
+        </div>
+      </div>
+      <div class="admin-panel admin-analytics" id="adminAnalyticsPanel" role="tabpanel" aria-labelledby="adminTabAnalytics" hidden>
+        <div class="analytics-kpis" id="analyticsKpis"></div>
+        <div class="analytics-grid" id="analyticsGrid"></div>
+        <p class="analytics-note">Graphs count every report in this browser, including pending, rejected, and sample data. Contributor points count approved non-sample reports only, and moderators are never ranked.</p>
+      </div>
+      <div class="modal-actions admin-actions">
+        <button type="button" class="btn btn-ghost" id="adminCloseBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="leaderboardModal" hidden>
+    <div class="modal-card leaderboard-card" role="dialog" aria-modal="true" aria-labelledby="leaderboardTitle">
+      <div class="modal-head">
+        <div>
+          <h2 class="modal-title" id="leaderboardTitle">Community impact</h2>
+          <p class="modal-subtitle" id="leaderboardSubtitle">Earn points for reporting issues, receiving community support, and helping close the loop.</p>
+        </div>
+        <button type="button" class="modal-close" id="leaderboardClose" aria-label="Close community leaderboard">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="leaderboard-self" id="leaderboardSelf"></div>
+      <section class="board-section" id="leaderboardBadgeSection" aria-labelledby="badgeShelfTitle">
+        <div class="board-section-head">
+          <h3 id="badgeShelfTitle">Badge shelf</h3>
+          <span id="badgeSummary">0 unlocked</span>
+        </div>
+        <div class="badge-grid" id="leaderboardBadges"></div>
+      </section>
+      <section class="board-section board-rankings" aria-labelledby="rankingsTitle">
+        <div class="board-section-head">
+          <h3 id="rankingsTitle">Community rankings</h3>
+          <span id="leaderboardScope">Top contributors</span>
+        </div>
+        <ol class="ranking-list" id="leaderboardList"></ol>
+        <div class="leaderboard-empty" id="leaderboardEmpty" hidden>
+          <span class="empty-icon" aria-hidden="true"><i data-lucide="trophy"></i></span>
+          <strong>No ranked contributors yet</strong>
+          <p>Add a report or support an existing one to put the first name on the board.</p>
+        </div>
+      </section>
+      <p class="points-note" id="leaderboardPointsNote">10 pts per report · 5 pts per vote received · 1 pt per vote cast · 15 pts per resolved report.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="leaderboardCloseBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="photo-viewer" id="photoViewer" hidden>
+    <div class="photo-viewer-dialog" role="dialog" aria-modal="true" aria-labelledby="photoViewerCaption">
+      <button type="button" class="photo-viewer-close" id="photoViewerClose" aria-label="Close photo">
+        <i data-lucide="x" aria-hidden="true"></i>
+      </button>
+      <img id="photoViewerImage" alt="" />
+      <p class="photo-viewer-caption" id="photoViewerCaption"></p>
+    </div>
+  </div>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="vendor/geoman/leaflet-geoman.min.js"></script>
+  <script src="vendor/lucide/lucide.min.js"></script>
+  <script src="storage.js"></script>
+  <script src="map.js"></script>
+  <script src="export.js"></script>
+  <script src="position.js"></script>
+  <script src="search.js"></script>
+  <script src="draw.js"></script>
+  <script src="theme.js"></script>
+  <script src="auth.js"></script>
+  <script src="contributors.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
