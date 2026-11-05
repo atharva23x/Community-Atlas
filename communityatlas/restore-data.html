@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CommunityAtlas - Move data to localhost</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f7f4;
+      --panel: #ffffff;
+      --text: #1d2a21;
+      --muted: #5d6b61;
+      --line: #d9e0d9;
+      --accent: #2f6b46;
+      --accent-2: #245538;
+      --warn-bg: #fff4e0;
+      --warn-line: #e8b45a;
+      --ok-bg: #e8f5ec;
+      --ok-line: #7fbf93;
+      --err-bg: #fdecea;
+      --err-line: #d98b84;
+      --code: #eef2ee;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121814;
+        --panel: #1a231d;
+        --text: #e8efe9;
+        --muted: #a2b1a6;
+        --line: #2d3a31;
+        --accent: #63b183;
+        --accent-2: #7ac796;
+        --warn-bg: #332a16;
+        --warn-line: #8a6a2c;
+        --ok-bg: #16291d;
+        --ok-line: #356b47;
+        --err-bg: #331b19;
+        --err-line: #7e3c36;
+        --code: #10160f;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px 18px 64px;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    main { max-width: 880px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -0.02em; }
+    .sub { margin: 0 0 26px; color: var(--muted); }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 20px;
+      margin: 0 0 18px;
+      box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+    }
+    .card h2 { margin: 0 0 4px; font-size: 17px; }
+    .card p { margin: 0 0 12px; }
+    .muted { color: var(--muted); }
+    .small { font-size: 13px; }
+    pre {
+      margin: 12px 0;
+      padding: 14px;
+      background: var(--code);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: auto;
+      font: 12.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: pre;
+    }
+    button {
+      appearance: none;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      padding: 9px 15px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+    }
+    button:hover { background: var(--accent-2); }
+    button.secondary {
+      background: transparent;
+      border-color: var(--line);
+      color: var(--text);
+    }
+    button.secondary:hover { border-color: var(--accent); color: var(--accent); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .drop {
+      border: 2px dashed var(--line);
+      border-radius: 12px;
+      padding: 22px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .drop:hover, .drop.over { border-color: var(--accent); background: var(--ok-bg); }
+    .drop strong { display: block; margin-bottom: 2px; }
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      resize: vertical;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      color: var(--text);
+      font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .notice {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px 13px;
+      margin: 12px 0;
+      font-size: 14px;
+    }
+    .notice.warn { background: var(--warn-bg); border-color: var(--warn-line); }
+    .notice.ok { background: var(--ok-bg); border-color: var(--ok-line); }
+    .notice.err { background: var(--err-bg); border-color: var(--err-line); }
+    .notice[hidden] { display: none; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 4px; font-size: 14px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+    code { background: var(--code); padding: 1px 5px; border-radius: 5px; font-size: 0.92em; }
+    .footer { margin-top: 22px; text-align: center; color: var(--muted); font-size: 13px; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Move CommunityAtlas data to localhost</h1>
+    <p class="sub">Copies your reports, accounts, votes, and comments from the deployed site to <code>127.0.0.1:5500</code>. Everything stays in this browser; the file is only a transfer container.</p>
+
+    <section class="card">
+      <h2>Step 1 - Copy your data from the deployed site</h2>
+      <p>Open <a href="https://communityatlas-vert.vercel.app/" target="_blank" rel="noreferrer">communityatlas-vert.vercel.app</a>, then open DevTools (<kbd>F12</kbd>) and paste this into the <strong>Console</strong>. It copies all CommunityAtlas keys to your clipboard.</p>
+      <pre id="snippet">(() => {
+  const data = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith("communityatlas")) {
+      data[key] = localStorage.getItem(key);
+    }
+  }
+  copy(JSON.stringify({
+    app: "CommunityAtlas",
+    exportedAt: new Date().toISOString(),
+    origin: location.origin,
+    data
+  }));
+  console.log("Copied " + Object.keys(data).length + " CommunityAtlas key(s). Now open the localhost restore page.");
+})();</pre>
+      <details>
+        <summary class="muted small" style="cursor:pointer;">Prefer a file? Show the download snippet</summary>
+        <pre id="snippetFile">(() => {
+  const data = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith("communityatlas")) {
+      data[key] = localStorage.getItem(key);
+    }
+  }
+  const blob = new Blob([JSON.stringify({
+    app: "CommunityAtlas",
+    exportedAt: new Date().toISOString(),
+    origin: location.origin,
+    data
+  }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "communityatlas-data.json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+})();</pre>
+        <button type="button" id="copyFileBtn" class="secondary">Copy file snippet</button>
+      </details>
+      <div class="row">
+        <button type="button" id="copyBtn" class="secondary">Copy snippet</button>
+        <span class="muted small">If Chrome blocks pasting, type <code>allow pasting</code> in the console first.</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Step 2 - Restore on localhost</h2>
+      <p>Click <strong>Paste from clipboard</strong>. If your browser blocks clipboard access, drop the file or paste the JSON manually.</p>
+      <div class="row">
+        <button type="button" id="clipBtn">Paste from clipboard</button>
+      </div>
+      <div class="drop" id="drop">
+        <strong>Or drop a communityatlas-data.json file here</strong>
+        <span class="muted small">or click to choose a file</span>
+        <input type="file" id="file" accept="application/json,.json" hidden />
+      </div>
+      <p class="muted small" style="margin: 10px 0 4px;">Or paste the JSON:</p>
+      <textarea id="paste" placeholder='{"app":"CommunityAtlas","data":{"communityatlas.features.v1":"..."}}'></textarea>
+      <div class="row" style="margin-top: 10px;">
+        <button type="button" id="parseBtn" class="secondary">Read pasted JSON</button>
+      </div>
+
+      <div id="preview" hidden>
+        <div class="notice" id="originNotice" hidden></div>
+        <table>
+          <thead>
+            <tr><th>Key</th><th>Size</th><th>Status</th></tr>
+          </thead>
+          <tbody id="keyRows"></tbody>
+        </table>
+        <div class="notice warn" id="overwriteNotice" hidden>This browser already has CommunityAtlas data. Restoring will replace the keys listed above.</div>
+        <div class="row">
+          <button type="button" id="restoreBtn">Restore data on localhost</button>
+          <button type="button" id="backupBtn" class="secondary">Back up current localhost data first</button>
+        </div>
+      </div>
+
+      <div class="notice ok" id="success" hidden></div>
+      <div class="notice err" id="error" hidden></div>
+    </section>
+
+    <p class="footer">After restoring, open <a href="index.html">CommunityAtlas on localhost</a>. Your reports and sign-in state should be back.</p>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const PREFIX = "communityatlas";
+      const drop = document.getElementById("drop");
+      const fileInput = document.getElementById("file");
+      const paste = document.getElementById("paste");
+      const preview = document.getElementById("preview");
+      const keyRows = document.getElementById("keyRows");
+      const originNotice = document.getElementById("originNotice");
+      const overwriteNotice = document.getElementById("overwriteNotice");
+      const success = document.getElementById("success");
+      const error = document.getElementById("error");
+      const restoreBtn = document.getElementById("restoreBtn");
+
+      let incoming = null;
+
+      function humanSize(bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+        return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+      }
+
+      function show(el, message) {
+        el.textContent = message;
+        el.hidden = false;
+      }
+
+      function hide(el) {
+        el.hidden = true;
+        el.textContent = "";
+      }
+
+      function setError(message) {
+        hide(success);
+        show(error, message);
+      }
+
+      function normalize(parsed) {
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+          throw new Error("That JSON is not an object.");
+        }
+        const source = parsed.data && typeof parsed.data === "object" && !Array.isArray(parsed.data)
+          ? parsed.data
+          : parsed;
+        const entries = {};
+        Object.keys(source).forEach((key) => {
+          if (!key.startsWith(PREFIX)) return;
+          const value = source[key];
+          if (typeof value !== "string") return;
+          entries[key] = value;
+        });
+        if (!Object.keys(entries).length) {
+          throw new Error("No CommunityAtlas keys found in that file.");
+        }
+        return { meta: parsed, entries };
+      }
+
+      function render(parsed) {
+        hide(error);
+        hide(success);
+        const result = normalize(parsed);
+        incoming = result.entries;
+
+        if (result.meta && result.meta.origin) {
+          show(originNotice, "Exported from " + result.meta.origin +
+            (result.meta.exportedAt ? " on " + new Date(result.meta.exportedAt).toLocaleString() : "") + ".");
+        } else {
+          hide(originNotice);
+        }
+
+        keyRows.textContent = "";
+        let existing = 0;
+        Object.keys(incoming).sort().forEach((key) => {
+          const value = incoming[key];
+          const hasLocal = localStorage.getItem(key) !== null;
+          if (hasLocal) existing += 1;
+          let note = hasLocal ? "Will replace" : "Will add";
+          if (key === "communityatlas.features.v1") {
+            try {
+              const features = JSON.parse(value);
+              const count = Array.isArray(features) ? features.length
+                : (features && Array.isArray(features.features) ? features.features.length : null);
+              if (count !== null) note += " - " + count + " feature" + (count === 1 ? "" : "s");
+            } catch (e) {
+              note += " - warning: not valid JSON";
+            }
+          }
+          const tr = document.createElement("tr");
+          const tdKey = document.createElement("td");
+          tdKey.innerHTML = "<code></code>";
+          tdKey.querySelector("code").textContent = key;
+          const tdSize = document.createElement("td");
+          tdSize.textContent = humanSize(new Blob([value]).size);
+          const tdStatus = document.createElement("td");
+          tdStatus.textContent = note;
+          tr.append(tdKey, tdSize, tdStatus);
+          keyRows.appendChild(tr);
+        });
+
+        overwriteNotice.hidden = existing === 0;
+        preview.hidden = false;
+      }
+
+      function readFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function () {
+          try {
+            const parsed = JSON.parse(String(reader.result));
+            render(parsed);
+            show(success, "Loaded " + file.name + ".");
+          } catch (e) {
+            setError("Could not read that file: " + e.message);
+          }
+        };
+        reader.onerror = function () {
+          setError("Could not read that file.");
+        };
+        reader.readAsText(file);
+      }
+
+      function backup() {
+        const data = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(PREFIX)) data[key] = localStorage.getItem(key);
+        }
+        const blob = new Blob([JSON.stringify({ app: "CommunityAtlas", origin: location.origin, data }, null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "communityatlas-localhost-backup.json";
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      }
+
+      function copyFrom(element, btn) {
+        navigator.clipboard.writeText(document.getElementById(element).textContent).then(function () {
+          const old = btn.textContent;
+          btn.textContent = "Copied";
+          setTimeout(() => { btn.textContent = old; }, 1500);
+        }).catch(function () {
+          setError("Could not copy automatically. Select the snippet and press Ctrl+C.");
+        });
+      }
+
+      document.getElementById("copyBtn").addEventListener("click", function () {
+        copyFrom("snippet", this);
+      });
+
+      document.getElementById("copyFileBtn").addEventListener("click", function () {
+        copyFrom("snippetFile", this);
+      });
+
+      drop.addEventListener("click", () => fileInput.click());
+      drop.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        drop.classList.add("over");
+      });
+      drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+      drop.addEventListener("drop", (event) => {
+        event.preventDefault();
+        drop.classList.remove("over");
+        readFile(event.dataTransfer.files && event.dataTransfer.files[0]);
+      });
+      fileInput.addEventListener("change", () => readFile(fileInput.files && fileInput.files[0]));
+
+      document.getElementById("parseBtn").addEventListener("click", function () {
+        try {
+          render(JSON.parse(paste.value));
+        } catch (e) {
+          setError("Could not parse that JSON: " + e.message);
+        }
+      });
+
+      document.getElementById("clipBtn").addEventListener("click", async function () {
+        try {
+          const text = await navigator.clipboard.readText();
+          if (!text) throw new Error("clipboard is empty");
+          render(JSON.parse(text));
+          show(success, "Read your CommunityAtlas data from the clipboard.");
+        } catch (e) {
+          setError("Could not read the clipboard (" + e.message + "). Drop the JSON file or paste it into the box below instead.");
+        }
+      });
+
+      document.getElementById("backupBtn").addEventListener("click", backup);
+
+      restoreBtn.addEventListener("click", function () {
+        if (!incoming) return;
+        try {
+          Object.keys(incoming).forEach((key) => {
+            localStorage.setItem(key, incoming[key]);
+          });
+          show(success, "Restored " + Object.keys(incoming).length + " key(s). Open CommunityAtlas on localhost to see your data.");
+          hide(error);
+          restoreBtn.disabled = true;
+        } catch (e) {
+          setError("Restore failed: " + e.message + ". The browser storage may be full.");
+        }
+      });
+
+      async function autoLoadTransferFile() {
+        try {
+          const response = await fetch("communityatlas-data.json", { cache: "no-store" });
+          if (!response.ok) return;
+          const parsed = await response.json();
+          render(parsed);
+          const existing = Object.keys(incoming).filter((key) => localStorage.getItem(key) !== null);
+          if (!existing.length) {
+            Object.keys(incoming).forEach((key) => {
+              localStorage.setItem(key, incoming[key]);
+            });
+            show(success, "Your Vercel data was imported automatically. Open CommunityAtlas on localhost to see it.");
+            restoreBtn.disabled = true;
+          } else {
+            show(success, "Found communityatlas-data.json. Review the keys, then click Restore.");
+          }
+        } catch (e) {
+          /* No transfer file present; manual options still work. */
+        }
+      }
+
+      window.addEventListener("load", autoLoadTransferFile);
+    })();
+  </script>
+</body>
+</html>
