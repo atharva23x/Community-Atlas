@@ -147,6 +147,7 @@
     setSidebar(false);
     draw.deactivate();
     refreshIcons();
+    document.dispatchEvent(new CustomEvent("atlas:ready"));
   }
 
   function cacheElements() {

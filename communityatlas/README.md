@@ -34,6 +34,9 @@ Accounts, sessions, votes, and report statuses are a **local demo**, not product
 - Six color-coded feature categories
 - Full report details from any map marker or sidebar row, including photo, notes, status, support count, reporter, accuracy, and geometry type
 - Community comments on every report, with sign-in, 600-character limits, and browser-local persistence
+- **Local needs** board where students request street lights, public WiFi, toilets, or drinking water at an exact map point, with one support per reporter
+- **Campaigns** board for blood donation camps, free eye checkups, cleanliness drives, and other local events, with follow/reminder toggles, `.ics` calendar export, and native or clipboard sharing
+- Administrator moderation of local-needs statuses (Open, Under review, Planned, Resolved) without creating or supporting requests
 - Feature details modal with name validation
 - Optional photo upload with drag-and-drop, preview, replace, and remove
 - Live feature list with report details, fly-to from the detail view, sorting, and two-step delete confirmation
@@ -57,6 +60,7 @@ communityatlas/
 ├── draw.js
 ├── auth.js
 ├── contributors.js
+├── community.js
 ├── storage.js
 ├── export.js
 ├── position.js
@@ -123,6 +127,26 @@ The account and moderation features are a **local demo**. Accounts, password has
 - Status changes are saved immediately, update the map/list visibility, and recalculate contributor points.
 - Sample reports start with seeded support counts and approved statuses. Those seeded votes have no voter identities; new votes are tracked per account. Sample reports are fixtures and are not part of the approval workflow.
 - To reset the demo, clear the three keys above in the browser's developer tools and reload. The seeded administrator is recreated, but reporter accounts and reports are lost.
+
+## Local needs and campaigns
+
+The sidebar's **LOCAL COMMUNITY** section opens one hub with two tabs. Everything here is stored in this browser only, using `communityatlas.assetRequests.v1`, `communityatlas.campaigns.v1`, and `communityatlas.campaignFollows.v1`. Nothing is posted to a server or shared between devices.
+
+### Local needs
+
+- Signed-in reporters can request a **street light**, **public WiFi**, **public toilet**, or **drinking water** point. Add a short title, an optional landmark and reason, then pin the exact spot by clicking the map or using the device location.
+- Requests appear as color-coded map pins and as cards with distance, status, and supporter counts. **Show on map** flies to the exact point.
+- Each reporter can support a request once; clicking again removes the support. Supporters are tracked per account, so counts survive a reload.
+- Administrators can see every request and update its status between **Open**, **Under review**, **Planned**, and **Resolved**, but cannot create or support requests.
+- The empty state offers sample requests so the map and filtering can be explored immediately. Samples are labeled and can be deleted by an administrator.
+
+### Campaigns
+
+- Anyone signed in can publish a **blood donation**, **eye checkup**, **cleanliness**, **health**, or **other** campaign with a date, time, venue, organizer, details, and map pin.
+- **Notify me** follows a campaign and adds it to the reminder strip at the top of the campaign tab. If the browser supports notifications, the app also asks for permission and confirms the reminder. Reminders are in-app only; there is no push service and no background delivery.
+- **Add to calendar** downloads an `.ics` event for the campaign start time (two hours by default). **Share** uses the device share sheet when available, otherwise copies the campaign details to the clipboard so they can be pasted into a class or neighbourhood group.
+- Upcoming campaigns are shown by default; switch the date filter to **All dates** to see past events. Past campaigns are labeled **Ended** and no longer appear as map pins.
+- Sample campaigns show the same follow, calendar, and sharing actions. Campaign creators and administrators can delete a campaign.
 
 For a real multi-user deployment, replace this demo with server-side authentication, authorization, vote uniqueness, and shared storage.
 
