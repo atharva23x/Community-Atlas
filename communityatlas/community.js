@@ -6,6 +6,7 @@
   const REQUEST_KEY = "communityatlas.assetRequests.v1";
   const CAMPAIGN_KEY = "communityatlas.campaigns.v1";
   const FOLLOW_KEY = "communityatlas.campaignFollows.v1";
+  const EXAMPLES_KEY = "communityatlas.hubExamples.v1";
 
   const ASSET_TYPES = [
     {
@@ -362,6 +363,25 @@
     }
   }
 
+  function seedExamples() {
+    let alreadySeeded = false;
+    try {
+      alreadySeeded = window.localStorage.getItem(EXAMPLES_KEY) === "done";
+    } catch (error) {
+      alreadySeeded = false;
+    }
+    if (alreadySeeded) return;
+
+    if (!state.requests.length) loadSampleRequests({ quiet: true });
+    if (!state.campaigns.length) loadSampleCampaigns({ quiet: true });
+
+    try {
+      window.localStorage.setItem(EXAMPLES_KEY, "done");
+    } catch (error) {
+      /* Examples still show for this visit. */
+    }
+  }
+
   function saveRequests() {
     saveJson(REQUEST_KEY, state.requests);
   }
@@ -690,7 +710,8 @@
     const user = getUser();
     if (!user) return false;
     if (isAdmin()) return true;
-    return item.createdBy === user.id && !item.isSample;
+    if (item.isSample) return true;
+    return item.createdBy === user.id;
   }
 
   function renderRequestList() {
@@ -1732,7 +1753,8 @@
     window.prompt("Copy these campaign details:", text);
   }
 
-  function loadSampleRequests() {
+  function loadSampleRequests(options) {
+    const quiet = Boolean(options && options.quiet);
     const anchor = getAnchor();
     const samples = [
       {
@@ -1752,6 +1774,15 @@
         offset: [-0.008, 0.014],
         baseSupport: 11,
         ageDays: 4
+      },
+      {
+        type: "toilet",
+        title: "Public toilet needed at the park",
+        place: "Neighbourhood park, Gate 3",
+        notes: "Families and morning walkers have no clean washroom nearby, especially in the evening.",
+        offset: [0.004, 0.020],
+        baseSupport: 7,
+        ageDays: 1
       },
       {
         type: "water",
@@ -1787,18 +1818,22 @@
     });
 
     if (!added) {
-      toast("Sample requests are already on the map.");
-      return;
+      if (!quiet) toast("Sample requests are already on the map.");
+      return 0;
     }
     saveRequests();
-    state.requestFilter = "all";
-    syncChips(els.requestFilters, "all");
-    renderAll();
-    setTab("requests", false);
-    toast(added + " sample request" + (added === 1 ? "" : "s") + " added.");
+    if (!quiet) {
+      state.requestFilter = "all";
+      syncChips(els.requestFilters, "all");
+      renderAll();
+      setTab("requests", false);
+      toast(added + " sample request" + (added === 1 ? "" : "s") + " added.");
+    }
+    return added;
   }
 
-  function loadSampleCampaigns() {
+  function loadSampleCampaigns(options) {
+    const quiet = Boolean(options && options.quiet);
     const anchor = getAnchor();
     const samples = [
       {
@@ -1855,17 +1890,20 @@
     });
 
     if (!added) {
-      toast("Sample campaigns are already on the map.");
-      return;
+      if (!quiet) toast("Sample campaigns are already on the map.");
+      return 0;
     }
     saveCampaigns();
-    state.campaignFilter = "all";
-    state.campaignWhen = "upcoming";
-    els.campaignDateFilter.value = "upcoming";
-    syncChips(els.campaignFilters, "all");
-    renderAll();
-    setTab("campaigns", false);
-    toast(added + " sample campaign" + (added === 1 ? "" : "s") + " added.");
+    if (!quiet) {
+      state.campaignFilter = "all";
+      state.campaignWhen = "upcoming";
+      els.campaignDateFilter.value = "upcoming";
+      syncChips(els.campaignFilters, "all");
+      renderAll();
+      setTab("campaigns", false);
+      toast(added + " sample campaign" + (added === 1 ? "" : "s") + " added.");
+    }
+    return added;
   }
 
   function handleModalKeydown(event) {
@@ -1987,6 +2025,7 @@
     loadData();
     buildSelects();
     buildFilters();
+    seedExamples();
     bindEvents();
     els.campaignDateFilter.value = state.campaignWhen;
     setTab("requests", false);
