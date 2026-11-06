@@ -239,7 +239,6 @@
               <span class="hub-entry-sub" id="hubRequestsMeta">Street lights, WiFi, water &amp; toilets</span>
             </span>
             <span class="hub-entry-count" id="hubRequestsCount">0</span>
-            <i data-lucide="chevron-right" class="hub-entry-arrow" aria-hidden="true"></i>
           </button>
           <button type="button" class="hub-entry" id="hubCampaignsBtn" aria-haspopup="dialog" aria-controls="communityHubModal">
             <span class="hub-entry-icon tone-purple" aria-hidden="true"><i data-lucide="megaphone"></i></span>
@@ -248,7 +247,6 @@
               <span class="hub-entry-sub" id="hubCampaignsMeta">Blood drives, eye camps &amp; cleanups</span>
             </span>
             <span class="hub-entry-count" id="hubCampaignsCount">0</span>
-            <i data-lucide="chevron-right" class="hub-entry-arrow" aria-hidden="true"></i>
           </button>
         </section>
 
@@ -610,7 +608,8 @@
   <div class="modal-backdrop" id="communityHubModal" hidden>
     <div class="modal-card hub-modal" role="dialog" aria-modal="true" aria-labelledby="hubTitle" aria-describedby="hubSubtitle">
       <div class="modal-head hub-head">
-        <div>
+        <span class="hub-head-icon" aria-hidden="true"><i data-lucide="users-round"></i></span>
+        <div class="hub-head-copy">
           <h2 class="modal-title" id="hubTitle">Community hub</h2>
           <p class="modal-subtitle" id="hubSubtitle">Ask for local assets and stay in the loop about nearby campaigns.</p>
         </div>
@@ -643,7 +642,8 @@
 
         <form class="hub-form" id="requestForm" novalidate hidden>
           <div class="hub-form-head">
-            <div>
+            <span class="hub-form-icon" aria-hidden="true"><i data-lucide="lightbulb"></i></span>
+            <div class="hub-form-copy">
               <strong>Request an asset</strong>
               <span>Tell the community what is missing and where.</span>
             </div>
@@ -722,7 +722,8 @@
 
         <form class="hub-form" id="campaignForm" novalidate hidden>
           <div class="hub-form-head">
-            <div>
+            <span class="hub-form-icon" aria-hidden="true"><i data-lucide="megaphone"></i></span>
+            <div class="hub-form-copy">
               <strong>Publish a campaign</strong>
               <span>Share a drive, camp, or clean-up happening nearby.</span>
             </div>

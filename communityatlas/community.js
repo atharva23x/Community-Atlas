@@ -12,21 +12,21 @@
       id: "streetlight",
       label: "Street light",
       icon: "Lightbulb",
-      color: "#B87813",
+      color: "#B45309",
       example: "Street light needed at the bus stop"
     },
     {
       id: "wifi",
       label: "Public WiFi",
       icon: "Wifi",
-      color: "#1358C7",
+      color: "#2563EB",
       example: "Public WiFi for the community library"
     },
     {
       id: "toilet",
       label: "Public toilet",
       icon: "Bath",
-      color: "#7C5CC4",
+      color: "#7C3AED",
       example: "Public toilet needed near the market"
     },
     {
@@ -46,11 +46,11 @@
   ];
 
   const CAMPAIGN_TYPES = [
-    { id: "blood", label: "Blood donation", icon: "HeartPulse", color: "#C33B3B", example: "Blood donation camp" },
-    { id: "eye", label: "Eye checkup", icon: "Eye", color: "#1358C7", example: "Free eye checkup camp" },
-    { id: "clean", label: "Cleanliness drive", icon: "Sparkles", color: "#16805B", example: "Neighbourhood cleanliness drive" },
-    { id: "health", label: "Health camp", icon: "Stethoscope", color: "#7C5CC4", example: "Free health checkup camp" },
-    { id: "other", label: "Other event", icon: "Megaphone", color: "#B87813", example: "Community awareness drive" }
+    { id: "blood", label: "Blood donation", icon: "HeartPulse", color: "#BE123C", example: "Blood donation camp" },
+    { id: "eye", label: "Eye checkup", icon: "Eye", color: "#0369A1", example: "Free eye checkup camp" },
+    { id: "clean", label: "Cleanliness drive", icon: "Sparkles", color: "#15803D", example: "Neighbourhood cleanliness drive" },
+    { id: "health", label: "Health camp", icon: "Stethoscope", color: "#7C3AED", example: "Free health checkup camp" },
+    { id: "other", label: "Other event", icon: "Megaphone", color: "#B45309", example: "Community awareness drive" }
   ];
 
   const state = {
@@ -492,9 +492,12 @@
   function buildFilter(container, options, active, onSelect) {
     container.textContent = "";
     options.forEach(function (option) {
-      const button = element("button", "hub-chip", option.label);
+      const button = element("button", "hub-chip");
       button.type = "button";
       button.dataset.filter = option.id;
+      if (option.color) button.style.setProperty("--chip-color", option.color);
+      if (option.icon) button.appendChild(icon(option.icon));
+      button.appendChild(element("span", null, option.label));
       button.setAttribute("aria-pressed", option.id === active ? "true" : "false");
       if (option.id === active) button.classList.add("is-active");
       button.addEventListener("click", function () {
@@ -515,7 +518,7 @@
   function buildFilters() {
     buildFilter(
       els.requestFilters,
-      [{ id: "all", label: "All" }].concat(ASSET_TYPES),
+      [{ id: "all", label: "All", icon: "layout-grid" }].concat(ASSET_TYPES),
       state.requestFilter,
       function (id) {
         state.requestFilter = id;
@@ -527,7 +530,7 @@
 
     buildFilter(
       els.campaignFilters,
-      [{ id: "all", label: "All" }].concat(CAMPAIGN_TYPES),
+      [{ id: "all", label: "All", icon: "layout-grid" }].concat(CAMPAIGN_TYPES),
       state.campaignFilter,
       function (id) {
         state.campaignFilter = id;
@@ -658,12 +661,12 @@
 
     els.requestsMeta.textContent = openCount
       ? openCount + " open · support a neighbour"
-      : "Street lights, WiFi, water & toilets";
+      : "Street lights, WiFi & toilets";
     if (upcomingCount) {
       els.campaignsMeta.textContent = upcomingCount + " upcoming" +
         (reminders ? " · " + reminders + " reminder" + (reminders === 1 ? "" : "s") : " · camps & drives");
     } else {
-      els.campaignsMeta.textContent = "Blood drives, eye camps & cleanups";
+      els.campaignsMeta.textContent = "Blood drives, eye camps & more";
     }
   }
 
@@ -734,6 +737,7 @@
     const type = assetType(request.type);
     const card = element("article", "hub-item");
     card.dataset.requestId = request.id;
+    card.style.setProperty("--hub-color", type.color);
     if (request.status === "done") card.classList.add("is-done");
 
     const iconWrap = element("div", "hub-item-icon");
@@ -931,6 +935,7 @@
 
     const card = element("article", "hub-item hub-campaign");
     card.dataset.campaignId = campaign.id;
+    card.style.setProperty("--hub-color", type.color);
     if (past) card.classList.add("is-past");
 
     const dateBadge = element("div", "hub-date-badge");
@@ -949,7 +954,10 @@
     if (past) {
       top.appendChild(element("span", "hub-status is-past", "Ended"));
     } else {
-      top.appendChild(element("span", "hub-when", formatCampaignWhen(campaign)));
+      const when = element("span", "hub-when");
+      when.appendChild(icon("clock"));
+      when.appendChild(element("span", null, formatCampaignWhen(campaign)));
+      top.appendChild(when);
     }
     const distance = itemDistance(campaign);
     if (distance !== null) top.appendChild(element("span", "hub-distance", formatDistance(distance)));
