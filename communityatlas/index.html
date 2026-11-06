@@ -156,6 +156,38 @@
           <p class="tool-hint position-hint" id="positionHint">Accuracy comes from your browser's location services.</p>
         </section>
 
+        <section class="panel-section hub-section" aria-labelledby="hubLabel">
+          <div class="hub-section-head">
+            <span class="hub-label-icon" aria-hidden="true"><i data-lucide="heart-handshake"></i></span>
+            <span class="hub-label-text" id="hubLabel">LOCAL COMMUNITY</span>
+            <span class="hub-section-tag">Quick access</span>
+          </div>
+          <div class="hub-quick-grid">
+            <button type="button" class="hub-entry tone-blue" id="hubRequestsBtn" aria-haspopup="dialog" aria-controls="communityHubModal">
+              <span class="hub-entry-icon" aria-hidden="true"><i data-lucide="lightbulb"></i></span>
+              <span class="hub-entry-copy">
+                <span class="hub-entry-title">Local needs</span>
+                <span class="hub-entry-sub" id="hubRequestsMeta">Street lights, WiFi, water &amp; toilets</span>
+              </span>
+              <span class="hub-entry-side">
+                <span class="hub-entry-count" id="hubRequestsCount">0</span>
+                <i data-lucide="chevron-right" class="hub-entry-arrow" aria-hidden="true"></i>
+              </span>
+            </button>
+            <button type="button" class="hub-entry tone-purple" id="hubCampaignsBtn" aria-haspopup="dialog" aria-controls="communityHubModal">
+              <span class="hub-entry-icon" aria-hidden="true"><i data-lucide="megaphone"></i></span>
+              <span class="hub-entry-copy">
+                <span class="hub-entry-title">Campaigns near you</span>
+                <span class="hub-entry-sub" id="hubCampaignsMeta">Blood drives, eye camps &amp; cleanups</span>
+              </span>
+              <span class="hub-entry-side">
+                <span class="hub-entry-count" id="hubCampaignsCount">0</span>
+                <i data-lucide="chevron-right" class="hub-entry-arrow" aria-hidden="true"></i>
+              </span>
+            </button>
+          </div>
+        </section>
+
         <section class="features-section" aria-labelledby="featuresLabel">
           <div class="features-head">
             <div class="section-heading" id="featuresLabel">FEATURES <span class="count-badge" id="featureCount">(0)</span></div>
@@ -227,26 +259,6 @@
               <span class="impact-meta" id="impactMeta">Reports and community support earn points.</span>
             </span>
             <i data-lucide="chevron-right" class="impact-arrow" aria-hidden="true"></i>
-          </button>
-        </section>
-
-        <section class="panel-section hub-section" aria-labelledby="hubLabel">
-          <div class="section-label" id="hubLabel">LOCAL COMMUNITY</div>
-          <button type="button" class="hub-entry" id="hubRequestsBtn" aria-haspopup="dialog" aria-controls="communityHubModal">
-            <span class="hub-entry-icon tone-blue" aria-hidden="true"><i data-lucide="lightbulb"></i></span>
-            <span class="hub-entry-copy">
-              <span class="hub-entry-title">Local needs</span>
-              <span class="hub-entry-sub" id="hubRequestsMeta">Street lights, WiFi, water &amp; toilets</span>
-            </span>
-            <span class="hub-entry-count" id="hubRequestsCount">0</span>
-          </button>
-          <button type="button" class="hub-entry" id="hubCampaignsBtn" aria-haspopup="dialog" aria-controls="communityHubModal">
-            <span class="hub-entry-icon tone-purple" aria-hidden="true"><i data-lucide="megaphone"></i></span>
-            <span class="hub-entry-copy">
-              <span class="hub-entry-title">Campaigns near you</span>
-              <span class="hub-entry-sub" id="hubCampaignsMeta">Blood drives, eye camps &amp; cleanups</span>
-            </span>
-            <span class="hub-entry-count" id="hubCampaignsCount">0</span>
           </button>
         </section>
 
